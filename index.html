@@ -50,25 +50,28 @@
 <body>
   <main>
     <h1>Coming soon<span class="dot"></span></h1>
-    <p>Скоро здесь что-то появится.</p>
   </main>
-    <script type='text/javascript'>                                                                                                                                                                                                                                                                                            
-      function initEmbeddedMessaging() {                                                                                                                                                                                                                                                                                     
+script type='text/javascript'>                                                                                                                                                                                                                                                                                            
+      window.addEventListener("onEmbeddedMessagingReady", () => {
           try {                                                                                                                                                                                                                                                                                                              
-              embeddedservice_bootstrap.settings.language = 'en_US';                                                                                                                                                                                                                                                         
-                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                           
               const params = new URLSearchParams(window.location.search);
-              const utm_source = params.get('utm_source') || '';                                                                                                                                                                                                                                                             
-            
-              embeddedservice_bootstrap.settings.hiddenPrechatFields = {
-                  utm_source: utm_source                                                                                                                                                                                                                                                                                     
-              };
-                                                                                                                                                                                                                                                                                                                             
+              embeddedservice_bootstrap.prechatAPI.setHiddenPrechatFields({                                                                                                                                                                                                                                                  
+                  UtmSource: params.get('utm_source') || ''
+              });                                                                                                                                                                                                                                                                                                            
+          } catch (err) {
+              console.error('Error setting hidden prechat fields: ', err);                                                                                                                                                                                                                                                   
+          }       
+      });
+
+      function initEmbeddedMessaging() {                                                                                                                                                                                                                                                                                     
+          try {
+              embeddedservice_bootstrap.settings.language = 'en_US';                                                                                                                                                                                                                                                         
+                  
               embeddedservice_bootstrap.init(
                   '00DSu000006fyJJ',
-                  'Fuelman_Agent_AI',
-                  'https://fleetcorna--uat2.sandbox.my.site.com/ESWFuelman1773662742319',                                                                                                                                                                                                                                    
-                  { scrt2URL: 'https://fleetcorna--uat2.sandbox.my.salesforce-scrt.com' }
+                  'Fuelman_Agent_AI',                                                                                                                                                                                                                                                                                        
+                  'https://fleetcorna--uat2.sandbox.my.site.com/ESWFuelman1773662742319',
+                  { scrt2URL: 'https://fleetcorna--uat2.sandbox.my.salesforce-scrt.com' }                                                                                                                                                                                                                                    
               );                                                                                                                                                                                                                                                                                                             
           } catch (err) {
               console.error('Error loading Embedded Messaging: ', err);                                                                                                                                                                                                                                                      
@@ -77,7 +80,7 @@
   </script>                                                                                                                                                                                                                                                                                                                  
   <script type='text/javascript'
           src='https://fleetcorna--uat2.sandbox.my.site.com/ESWFuelman1773662742319/assets/js/bootstrap.min.js'
-          onload='initEmbeddedMessaging()'></script>                                                                                                                                                                                                                                                                         
+          onload='initEmbeddedMessaging()'></script>                                                                                                                                                                                                                                                                      
    
 </body>
 </html>
