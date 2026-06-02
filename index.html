@@ -52,52 +52,48 @@
       <h1>Coming soon<span class="dot"></span></h1>
     </main>                                                                                                                                                                                                                                                                                                                  
    
-    <script type='text/javascript'>                                                                                                                                                                                                                                                                                          
-      // ── listener: hidden prechat fields (utm_campaign) ──
-      window.addEventListener("onEmbeddedMessagingReady", () => {                                                                                                                                                                                                                                                            
-        try {
-          const params = new URLSearchParams(window.location.search);                                                                                                                                                                                                                                                        
-          const utm_campaign = params.get('utm_campaign') || '';
-          console.info('utm_campaign => ', utm_campaign);                                                                                                                                                                                                                                                                    
-          embeddedservice_bootstrap.prechatAPI.setHiddenPrechatFields({
-            utm_campaign: utm_campaign                                                                                                                                                                                                                                                                                       
-          });                                               
-        } catch (err) {                                                                                                                                                                                                                                                                                                      
-          console.error('Error setting hidden prechat fields: ', err);                                                                                                                                                                                                                                                       
-        }
-      });                                                                                                                                                                                                                                                                                                                    
-                                                            
-      // ── listener: auto-launch chat (после создания кнопки) ──                                                                                                                                                                                                                                                            
-      window.addEventListener('onEmbeddedMessagingButtonCreated', () => {
-        try {                                                                                                                                                                                                                                                                                                                
-          embeddedservice_bootstrap.utilAPI.launchChat()    
-            .then(() => console.log('Chat launched'))                                                                                                                                                                                                                                                                        
-            .catch(e => console.error('launchChat failed:', e));
-        } catch (err) {                                                                                                                                                                                                                                                                                                      
-          console.error('Error launching chat: ', err);                                                                                                                                                                                                                                                                      
-        }
-      });                                                                                                                                                                                                                                                                                                                    
-                                                            
+ <!-- 1. Существующий init -->
+  <script type='text/javascript'>
       function initEmbeddedMessaging() {
-        try {
-          embeddedservice_bootstrap.settings.language = 'en_US';
-                                                                                                                                                                                                                                                                                                                             
-          embeddedservice_bootstrap.init(
-            '00DSu000006fyJJ',                                                                                                                                                                                                                                                                                               
-            'Fuelman_Agent_AI',                             
-            'https://fleetcorna--uat2.sandbox.my.site.com/ESWFuelman1773662742319',                                                                                                                                                                                                                                          
-            { scrt2URL: 'https://fleetcorna--uat2.sandbox.my.salesforce-scrt.com' }
-          );                                                                                                                                                                                                                                                                                                                 
-        } catch (err) {                                     
-          console.error('Error loading Embedded Messaging: ', err);                                                                                                                                                                                                                                                          
-        }                                                   
-      }
-    </script>    
-<script type='text/javascript' src='https://fleetcorna--uat.sandbox.my.site.com/ESWFuelmanMessagingAgen1774355173425/assets/js/bootstrap.min.js' onload='initEmbeddedMessaging()'></script>
-                                                                                                                                                                                                                                                                                                                
-   
-    <script type='text/javascript'                                                                                                                                                                                                                                                                                           
-            src='https://fleetcorna--uat2.sandbox.my.site.com/ESWFuelman1773662742319/assets/js/bootstrap.min.js'
-            onload='initEmbeddedMessaging()'></script>                                                                                                                                                                                                                                                                       
+          try {
+              embeddedservice_bootstrap.settings.language = 'en_US';
+              embeddedservice_bootstrap.init(
+                  '00DSu000006fyJJ',                                                                                                                                                                                                                                                                  
+                  'Fuelman_Agent_AI',
+                  'https://fleetcorna--uat2.sandbox.my.site.com/ESWFuelman1773662742319',
+                  {
+                      scrt2URL: 'https://fleetcorna--uat2.sandbox.my.salesforce-scrt.com'
+                  }
+              );
+          } catch (err) {                                                                                                                                                                                                                                                                             
+              console.error('Error loading Embedded Messaging: ', err);
+          }
+      };
+  </script>
+                                                                                                                                                                                                                                                                                                      
+  <!-- 2. Geolocation capture (нужен зарегистрированный listener ДО init) -->
+  <script type='text/javascript'>
+      window.addEventListener('onEmbeddedMessagingReady', function () {
+          if (!navigator.geolocation) return;
+          navigator.geolocation.getCurrentPosition(
+              function (pos) {
+                  try {                                                                                                                                                                                                                                                                               
+                      embeddedservice_bootstrap.prechatAPI.setHiddenPrechatFields({
+                          User_Latitude: String(pos.coords.latitude),
+                          User_Longitude: String(pos.coords.longitude)
+                      });
+                      console.info('[MIAW] geo set:', pos.coords.latitude, pos.coords.longitude);
+                  } catch (e) {
+                      console.error('[MIAW] setHiddenPrechatFields failed:', e);
+                  }
+              },
+              function (err) { console.warn('[MIAW] geo denied:', err.message); },
+              { timeout: 5000, maximumAge: 300000, enableHighAccuracy: false }
+          );
+      });
+  </script>
+  
+  <!-- 3. Bootstrap.min.js -->                                                                                                                                                                                                                                                                        
+  <script type='text/javascript' src='https://fleetcorna--uat2.sandbox.my.site.com/ESWFuelman1773662742319/assets/js/bootstrap.min.js' onload='initEmbeddedMessaging()'></script>                                                                                                                                                                                                                                                                  
   </body>
   </html>
