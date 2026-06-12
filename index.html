@@ -52,21 +52,32 @@
       <h1>Coming soon<span class="dot"></span></h1>
     </main>                                                                                                                                                                                                                                                                                                                  
    
-⏺ <script type='text/javascript'>
+<script type='text/javascript'>
       //── listener: hidden pre-chat fields (UTM params from the page URL) ──
-      window.addEventListener('onEmbeddedMessagingReady', () => {
-          try {
-              const params = new URLSearchParams(window.location.search);
-              const hiddenFields = {};
-              for (const p of ['utm_source', 'utm_medium', 'utm_campaign', 'utm_term', 'utm_content']) {
-                  hiddenFields[p] = encodeURIComponent(params.get(p) || '');
+window.addEventListener('onEmbeddedMessagingReady', () => {
+      try {
+          const params = new URLSearchParams(window.location.search);
+          const hiddenFields = {
+              utm_source: '',
+              utm_medium: '',
+              utm_campaign: '',
+              utm_term: '',
+              utm_content: ''
+          };
+          for (const [key, value] of params.entries()) {
+              const k = key.toLowerCase();
+              // case-insensitive param name match; first occurrence wins
+              if (k in hiddenFields && !hiddenFields[k]) {
+                  // keep values human-readable; strip only chars that would break the query string
+                  hiddenFields[k] = value.replace(/[&#]/g, ' ').trim();
               }
-              console.info('UTM hidden prechat fields => ', hiddenFields);
-              embeddedservice_bootstrap.prechatAPI.setHiddenPrechatFields(hiddenFields);
-          } catch (err) {
-              console.error('Error setting hidden prechat fields: ', err);
           }
-      });
+          console.info('UTM hidden prechat fields => ', hiddenFields);
+          embeddedservice_bootstrap.prechatAPI.setHiddenPrechatFields(hiddenFields);
+      } catch (err) {
+          console.error('Error setting hidden prechat fields: ', err);
+      }
+  });
 
       //── listener: auto-launch chat (5 seconds after the button is created) ──
       window.addEventListener('onEmbeddedMessagingButtonCreated', () => {
