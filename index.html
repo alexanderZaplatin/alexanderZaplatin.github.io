@@ -54,17 +54,17 @@
    
     <script type='text/javascript'>                   
    // ── listener: auto-launch chat (через 10 секунд после создания кнопки) ──
-   window.addEventListener('onEmbeddedMessagingButtonCreated', () => {
-     setTimeout(() => {
-       try {
-         embeddedservice_bootstrap.utilAPI.launchChat()
-           .then(() => console.log('Chat launched'))
-           .catch(e => console.error('launchChat failed:', e));
-       } catch (err) {
-         console.error('Error launching chat: ', err);
-       }
-     }, 5000); // 10 секунд
-   });                                                                                                                                                                                                                                                                                                                   
+   // window.addEventListener('onEmbeddedMessagingButtonCreated', () => {
+   //   setTimeout(() => {
+   //     try {
+   //       embeddedservice_bootstrap.utilAPI.launchChat()
+   //         .then(() => console.log('Chat launched'))
+   //         .catch(e => console.error('launchChat failed:', e));
+   //     } catch (err) {
+   //       console.error('Error launching chat: ', err);
+   //     }
+   //   }, 5000); // 5 секунд
+   // });                                                                                                                                                                                                                                                                                                                   
                                                             
 	function initEmbeddedMessaging() {
 		try {
