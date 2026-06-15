@@ -54,7 +54,7 @@
    
 <script type='text/javascript'>
       //── listener: hidden pre-chat fields (UTM params from the page URL) ──
-window.addEventListener('onEmbeddedMessagingReady', () => {
+  window.addEventListener('onEmbeddedMessagingReady', () => {
       try {
           const params = new URLSearchParams(window.location.search);
           const hiddenFields = {
@@ -68,8 +68,7 @@ window.addEventListener('onEmbeddedMessagingReady', () => {
               const k = key.toLowerCase();
               // case-insensitive param name match; first occurrence wins
               if (k in hiddenFields && !hiddenFields[k]) {
-                  // keep values human-readable; strip only chars that would break the query string
-                  hiddenFields[k] = value.replace(/[&#]/g, ' ').trim();
+                  hiddenFields[k] = value;
               }
           }
           console.info('UTM hidden prechat fields => ', hiddenFields);
