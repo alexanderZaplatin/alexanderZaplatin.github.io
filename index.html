@@ -71,7 +71,6 @@
                   hiddenFields[k] = value;
               }
           }
-          console.info('UTM hidden prechat fields => ', hiddenFields);
           embeddedservice_bootstrap.prechatAPI.setHiddenPrechatFields(hiddenFields);
       } catch (err) {
           console.error('Error setting hidden prechat fields: ', err);
