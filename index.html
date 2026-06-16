@@ -50,9 +50,29 @@
   <body>                                                    
     <main>
       <h1>Coming soon<span class="dot"></span></h1>
-    </main>                                                                                                                                                                                                                                                                                                                  
+    </main>    
+    <script type='text/javascript'>
+	function initEmbeddedMessaging() {
+		try {
+			embeddedservice_bootstrap.settings.language = 'en_US'; // For example, enter 'en' or 'en-US'
+
+			embeddedservice_bootstrap.init(
+				'00DRT00000AsqQT',
+				'Fuelman_Agent_AI_UAT',
+				'https://fleetcorna--uat.sandbox.my.site.com/ESWFuelmanAgentAIUAT1779987225631',
+				{
+					scrt2URL: 'https://fleetcorna--uat.sandbox.my.salesforce-scrt.com'
+				}
+			);
+		} catch (err) {
+			console.error('Error loading Embedded Messaging: ', err);
+		}
+	};
+</script>
+<script type='text/javascript' src='https://fleetcorna--uat.sandbox.my.site.com/ESWFuelmanAgentAIUAT1779987225631/assets/js/bootstrap.min.js' onload='initEmbeddedMessaging()'></script>
+
    
-<script type='text/javascript'>
+<!-- <script type='text/javascript'>
       //── listener: hidden pre-chat fields (UTM params from the page URL) ──
   window.addEventListener('onEmbeddedMessagingReady', () => {
       try {
@@ -107,6 +127,6 @@
       }
     };
   </script>
-<script type='text/javascript' src='https://fleetcorna--uat.sandbox.my.site.com/ESWFuelmanAgentAIUAT1779987225631/assets/js/bootstrap.min.js' onload='initEmbeddedMessaging()'></script>                                                                                                                                                                                                                                                   
+<script type='text/javascript' src='https://fleetcorna--uat.sandbox.my.site.com/ESWFuelmanAgentAIUAT1779987225631/assets/js/bootstrap.min.js' onload='initEmbeddedMessaging()'></script>                                                                                                                                                                                                                                                    -->
   </body>
   </html>
