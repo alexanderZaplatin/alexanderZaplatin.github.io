@@ -51,24 +51,54 @@
     <main>
       <h1>Coming soon<span class="dot"></span></h1>
     </main>    
-<script type='text/javascript'>
-	function initEmbeddedMessaging() {
-		try {
-			embeddedservice_bootstrap.settings.language = 'en_US'; // For example, enter 'en' or 'en-US'
+  <script type="text/javascript">
+    function hasRecallConsent() {
+      // TODO: заменить на реальный CMP-чек. US: false при opt-out/GPC. EU/UK: true только после opt-in.
+      return true;
+    }
 
-			embeddedservice_bootstrap.init(
-				'00DSu000006fyJJ',
-				'test',
-				'https://fleetcorna--uat2.sandbox.my.site.com/ESWtest1782476974101',
-				{
-					scrt2URL: 'https://fleetcorna--uat2.sandbox.my.salesforce-scrt.com'
-				}
-			);
-		} catch (err) {
-			console.error('Error loading Embedded Messaging: ', err);
-		}
-	};
-</script>
-<script type='text/javascript' src='https://fleetcorna--uat2.sandbox.my.site.com/ESWtest1782476974101/assets/js/bootstrap.min.js' onload='initEmbeddedMessaging()'></script>                                                                                                                                                                                                                                                 
+    function getVisitorId() {
+      if (!hasRecallConsent()) {
+        try { localStorage.removeItem('fm_vid'); } catch (e) {}
+        return null;
+      }
+      try {
+        var v = localStorage.getItem('fm_vid');
+        if (!v) { v = crypto.randomUUID(); localStorage.setItem('fm_vid', v); }
+        return v;
+      } catch (e) { return null; }
+    }
+
+    function initEmbeddedMessaging() {
+      try {
+        embeddedservice_bootstrap.settings.language = 'en_US';
+
+        window.addEventListener('onEmbeddedMessagingReady', function () {
+          try {
+            var vid = getVisitorId();
+            console.log('[recall] visitor_id →', vid);   // <-- лог перед передачей
+            if (vid) {
+              embeddedservice_bootstrap.prechatAPI.setHiddenPrechatFields({ visitor_id: vid });
+              console.log('[recall] setHiddenPrechatFields sent:', { visitor_id: vid });
+            } else {
+              console.log('[recall] no visitor_id (no consent / storage blocked) — skipped');
+            }
+          } catch (e) { console.error('[recall] pre-chat error:', e); }
+        });
+  
+        embeddedservice_bootstrap.init(
+          '00DSu000006fyJJ',
+          'test',
+          'https://fleetcorna--uat2.sandbox.my.site.com/ESWtest1782476974101',
+          { scrt2URL: 'https://fleetcorna--uat2.sandbox.my.salesforce-scrt.com' }
+        );
+      } catch (err) {
+        console.error('Error loading Embedded Messaging: ', err);
+      }
+    }
+  </script>
+  <script type="text/javascript"
+    src="https://fleetcorna--uat2.sandbox.my.site.com/ESWtest1782476974101/assets/js/bootstrap.min.js"
+    onload="initEmbeddedMessaging()"></script>                                                                                                                                                                                                                                              
   </body>
   </html>
