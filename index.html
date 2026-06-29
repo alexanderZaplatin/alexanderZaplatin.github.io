@@ -52,57 +52,23 @@
       <h1>Coming soon<span class="dot"></span></h1>
     </main>    
 <script type='text/javascript'>
-      //── listener: hidden pre-chat fields (UTM params from the page URL) ──
-  window.addEventListener('onEmbeddedMessagingReady', () => {
-      try {
-          const params = new URLSearchParams(window.location.search);
-          const hiddenFields = {
-              utm_source: '',
-              utm_medium: '',
-              utm_campaign: '',
-              utm_term: '',
-              utm_content: ''
-          };
-          for (const [key, value] of params.entries()) {
-              const k = key.toLowerCase();
-              // case-insensitive param name match; first occurrence wins
-              if (k in hiddenFields && !hiddenFields[k]) {
-                  hiddenFields[k] = value;
-              }
-          }
-          embeddedservice_bootstrap.prechatAPI.setHiddenPrechatFields(hiddenFields);
-      } catch (err) {
-          console.error('Error setting hidden prechat fields: ', err);
-      }
-  });
-      //── listener: auto-launch chat (5 seconds after the button is created) ──
-      window.addEventListener('onEmbeddedMessagingButtonCreated', () => {
-          setTimeout(() => {
-              try {
-                  embeddedservice_bootstrap.utilAPI.launchChat()
-                      .then(() => console.log('Chat launched'))
-                      .catch(e => console.error('launchChat failed:', e));
-              } catch (err) {
-                  console.error('Error launching chat: ', err);
-              }
-          }, 5000); // 5 seconds
-      });
-      function initEmbeddedMessaging() {
-          try {
-              embeddedservice_bootstrap.settings.language = 'en_US'; // For example, enter 'en' or 'en-US'
-              embeddedservice_bootstrap.init(
-                  '00DSu000006fyJJ',
-                  'Fuelman_Agent_AI',
-                  'https://fleetcorna--uat2.sandbox.my.site.com/ESWFuelman1773662742319',
-                  {
-                      scrt2URL: 'https://fleetcorna--uat2.sandbox.my.salesforce-scrt.com'
-                  }
-              );
-          } catch (err) {
-              console.error('Error loading Embedded Messaging: ', err);
-          }
-      };
-  </script>
-  <script type='text/javascript' src='https://fleetcorna--uat2.sandbox.my.site.com/ESWFuelman1773662742319/assets/js/bootstrap.min.js' onload='initEmbeddedMessaging()'></script>                                                                                                                                                                                                                                                     
+	function initEmbeddedMessaging() {
+		try {
+			embeddedservice_bootstrap.settings.language = 'en_US'; // For example, enter 'en' or 'en-US'
+
+			embeddedservice_bootstrap.init(
+				'00DSu000006fyJJ',
+				'test',
+				'https://fleetcorna--uat2.sandbox.my.site.com/ESWtest1782476974101',
+				{
+					scrt2URL: 'https://fleetcorna--uat2.sandbox.my.salesforce-scrt.com'
+				}
+			);
+		} catch (err) {
+			console.error('Error loading Embedded Messaging: ', err);
+		}
+	};
+</script>
+<script type='text/javascript' src='https://fleetcorna--uat2.sandbox.my.site.com/ESWtest1782476974101/assets/js/bootstrap.min.js' onload='initEmbeddedMessaging()'></script>                                                                                                                                                                                                                                                 
   </body>
   </html>
