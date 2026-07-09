@@ -52,6 +52,9 @@
       <h1>Coming soon<span class="dot"></span></h1>
     </main>    
 <script type='text/javascript'>
+  function isDesktop() {
+      return window.matchMedia("(hover: hover) and (pointer: fine)").matches;
+    }
       //── listener: hidden pre-chat fields (UTM params from the page URL) ──
   window.addEventListener('onEmbeddedMessagingReady', () => {
       try {
@@ -75,29 +78,21 @@
           console.error('Error setting hidden prechat fields: ', err);
       }
   });
-
-function isDesktop() {
-
-    return window.matchMedia("(hover: hover) and (pointer: fine)").matches;
-
-}
- 
-window.addEventListener('onEmbeddedMessagingButtonCreated', () => {
-
-    if (!isDesktop()) {
-
+      //── listener: auto-launch chat (5 seconds after the button is created) ──
+      window.addEventListener('onEmbeddedMessagingButtonCreated', () => {
+              if (isDesktop()) {
         return;
-
-    }
- 
-    setTimeout(() => {
-
-        embeddedservice_bootstrap.utilAPI.launchChat();
-
-    }, 5000);
-
-});
- 
+      }
+          setTimeout(() => {
+              try {
+                  embeddedservice_bootstrap.utilAPI.launchChat()
+                      .then(() => console.log('Chat launched'))
+                      .catch(e => console.error('launchChat failed:', e));
+              } catch (err) {
+                  console.error('Error launching chat: ', err);
+              }
+          }, 5000); // 5 seconds
+      });
     function initEmbeddedMessaging() {
       try {
         embeddedservice_bootstrap.settings.language = 'en_US'; // For example, enter 'en' or 'en-US'
@@ -113,8 +108,7 @@ window.addEventListener('onEmbeddedMessagingButtonCreated', () => {
         console.error('Error loading Embedded Messaging: ', err);
       }
     };
-  
 </script>
-<script type='text/javascript' src='https://fleetcorna--uat.sandbox.my.site.com/ESWFuelmanAgentAIUAT1779987225631/assets/js/bootstrap.min.js' onload='initEmbeddedMessaging()'></script>                                                                                                                                                                                                                                         
+<script type='text/javascript' src='https://fleetcorna--uat.sandbox.my.site.com/ESWFuelmanAgentAIUAT1779987225631/assets/js/bootstrap.min.js' onload='initEmbeddedMessaging()'></script>                                                                                                                                                                                                                                     
   </body>
   </html>
