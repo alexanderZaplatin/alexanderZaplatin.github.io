@@ -80,7 +80,7 @@
   });
       //── listener: auto-launch chat (5 seconds after the button is created) ──
       window.addEventListener('onEmbeddedMessagingButtonCreated', () => {
-              if (isDesktop()) {
+              if (!isDesktop()) {
         return;
       }
           setTimeout(() => {
