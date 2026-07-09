@@ -76,24 +76,28 @@
       }
   });
 
-  function isDesktop() {
+function isDesktop() {
+
     return window.matchMedia("(hover: hover) and (pointer: fine)").matches;
+
 }
-  
-      //── listener: auto-launch chat (5 seconds after the button is created) ──
-  if (isDesktop) {
-      window.addEventListener('onEmbeddedMessagingButtonCreated', () => {
-          setTimeout(() => {
-              try {
-                  embeddedservice_bootstrap.utilAPI.launchChat()
-                      .then(() => console.log('Chat launched'))
-                      .catch(e => console.error('launchChat failed:', e));
-              } catch (err) {
-                  console.error('Error launching chat: ', err);
-              }
-          }, 5000); // 5 seconds
-      });
-  }
+ 
+window.addEventListener('onEmbeddedMessagingButtonCreated', () => {
+
+    if (!isDesktop()) {
+
+        return;
+
+    }
+ 
+    setTimeout(() => {
+
+        embeddedservice_bootstrap.utilAPI.launchChat();
+
+    }, 5000);
+
+});
+ 
     function initEmbeddedMessaging() {
       try {
         embeddedservice_bootstrap.settings.language = 'en_US'; // For example, enter 'en' or 'en-US'
