@@ -50,9 +50,9 @@
   <body>                                                    
     <main>
       <h1>Coming soon<span class="dot"></span></h1>
-    </main>    
+    </main> 
 
-  <script>
+     <script>
   (() => {
     'use strict';
 
@@ -406,6 +406,186 @@
       }, 50);
     }
   })();
+  </script>
+
+  <script type='text/javascript'>
+    (() => {
+      const LOCATION_REQUEST_MESSAGE = 'fuelman:geolocation:request';
+      const LOCATION_RESPONSE_MESSAGE = 'fuelman:geolocation:response';
+      const LOCATION_BRIDGE_VERSION = 1;
+      const GEOLOCATION_OPTIONS = {
+        enableHighAccuracy: false,
+        timeout: 10000,
+        maximumAge: 300000
+      };
+      const TRUSTED_MESSAGING_ORIGINS = new Set([
+        'https://fleetcorna--uat2.sandbox.my.site.com',
+        'https://fleetcorna--uat2.sandbox.my.salesforce-scrt.com'
+      ]);
+
+      window.addEventListener('message', event => {
+        const request = event.data;
+        if (
+          request?.type !== LOCATION_REQUEST_MESSAGE ||
+          request.version !== LOCATION_BRIDGE_VERSION ||
+          typeof request.requestId !== 'string' ||
+          !request.requestId ||
+          !event.source
+        ) {
+          return;
+        }
+
+        if (!TRUSTED_MESSAGING_ORIGINS.has(event.origin)) {
+          console.warn(
+            'Ignored current-location request from untrusted origin:',
+            event.origin
+          );
+          return;
+        }
+
+        const sendResponse = response => {
+          event.source.postMessage(
+            {
+              type: LOCATION_RESPONSE_MESSAGE,
+              version: LOCATION_BRIDGE_VERSION,
+              requestId: request.requestId,
+              ...response
+            },
+            event.origin
+          );
+        };
+
+        if (!navigator.geolocation) {
+          sendResponse({
+            success: false,
+            errorCode: 'UNSUPPORTED'
+          });
+          return;
+        }
+
+        navigator.geolocation.getCurrentPosition(
+          position => {
+            sendResponse({
+              success: true,
+              latitude: position.coords.latitude,
+              longitude: position.coords.longitude
+            });
+          },
+          error => {
+            sendResponse({
+              success: false,
+              errorCode: error?.code || 'UNKNOWN'
+            });
+          },
+          GEOLOCATION_OPTIONS
+        );
+      });
+    })();
+
+    //── manual test: outbound API request from the host page ──
+    window.testFuelmanApiRequest = async () => {
+      try {
+        const response = await fetch(
+          'https://api.jsonplaceholder.dev/posts',
+          {
+            method: 'POST',
+            mode: 'cors',
+            credentials: 'omit',
+            headers: {
+              'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
+              source: 'fuelman-host-snippet',
+              timestamp: new Date().toISOString(),
+              test: true
+            })
+          }
+        );
+
+        const body = await response.json();
+        const result = {
+          status: response.status,
+          ok: response.ok,
+          body
+        };
+
+        console.log('Fuelman API test:', result);
+
+        if (!response.ok) {
+          throw new Error(`API test failed with status ${response.status}`);
+        }
+
+        return result;
+      } catch (err) {
+        console.error('Fuelman API test failed:', err);
+        throw err;
+      }
+    };
+
+    //── listener: hidden pre-chat fields (UTM params from the page URL) ──
+    window.addEventListener('onEmbeddedMessagingReady', () => {
+      try {
+        const params = new URLSearchParams(window.location.search);
+        const hiddenFields = {
+          utm_source: '',
+          utm_medium: '',
+          utm_campaign: '',
+          utm_term: '',
+          utm_content: ''
+        };
+
+        for (const [key, value] of params.entries()) {
+          const k = key.toLowerCase();
+
+          // case-insensitive param name match; first occurrence wins
+          if (k in hiddenFields && !hiddenFields[k]) {
+            hiddenFields[k] = value;
+          }
+        }
+
+        embeddedservice_bootstrap.prechatAPI.setHiddenPrechatFields(hiddenFields);
+      } catch (err) {
+        console.error('Error setting hidden prechat fields: ', err);
+      }
+    });
+
+    function isDesktop() {
+      return window.matchMedia('(hover: hover) and (pointer: fine)').matches;
+    }
+
+    //── listener: auto-launch chat (5 seconds after the button is created) ──
+    window.addEventListener('onEmbeddedMessagingButtonCreated', () => {
+      if (!isDesktop()) {
+        return;
+      }
+
+      setTimeout(() => {
+        try {
+          embeddedservice_bootstrap.utilAPI.launchChat()
+            .then(() => console.log('Chat launched'))
+            .catch(e => console.error('launchChat failed:', e));
+        } catch (err) {
+          console.error('Error launching chat: ', err);
+        }
+      }, 5000); // 5 seconds
+    });
+
+    function initEmbeddedMessaging() {
+      try {
+        embeddedservice_bootstrap.settings.language = 'en_US';
+
+        embeddedservice_bootstrap.init(
+          '00DSu000006fyJJ',
+          'Fuelman_Agent_AI',
+          'https://fleetcorna--uat2.sandbox.my.site.com/ESWFuelman1773662742319',
+          {
+            scrt2URL: 'https://fleetcorna--uat2.sandbox.my.salesforce-scrt.com'
+          }
+        );
+      } catch (err) {
+        console.error('Error loading Embedded Messaging: ', err);
+      }
+    }
   </script>
 
   <script
