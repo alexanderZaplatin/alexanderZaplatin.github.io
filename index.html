@@ -422,6 +422,68 @@
         'https://fleetcorna--uat2.sandbox.my.site.com',
         'https://fleetcorna--uat2.sandbox.my.salesforce-scrt.com'
       ]);
+      let cachedLocation;
+      let pendingLocationRequest;
+      let requestedLocationOnChatOpen = false;
+
+      const requestCurrentLocation = () => {
+        if (cachedLocation) {
+          return Promise.resolve(cachedLocation);
+        }
+
+        if (pendingLocationRequest) {
+          return pendingLocationRequest;
+        }
+
+        if (!navigator.geolocation) {
+          return Promise.reject({ code: 'UNSUPPORTED' });
+        }
+
+        const currentRequest = new Promise((resolve, reject) => {
+          navigator.geolocation.getCurrentPosition(
+            position => {
+              cachedLocation = {
+                latitude: position.coords.latitude,
+                longitude: position.coords.longitude
+              };
+              console.log('Fuelman geolocation received:', cachedLocation);
+              resolve(cachedLocation);
+            },
+            reject,
+            GEOLOCATION_OPTIONS
+          );
+        });
+
+        pendingLocationRequest = currentRequest;
+        currentRequest.then(
+          () => {
+            if (pendingLocationRequest === currentRequest) {
+              pendingLocationRequest = undefined;
+            }
+          },
+          () => {
+            if (pendingLocationRequest === currentRequest) {
+              pendingLocationRequest = undefined;
+            }
+          }
+        );
+
+        return currentRequest;
+      };
+
+      window.addEventListener('onEmbeddedMessagingConversationOpened', () => {
+        if (requestedLocationOnChatOpen) {
+          return;
+        }
+
+        requestedLocationOnChatOpen = true;
+        requestCurrentLocation().catch(error => {
+          console.info(
+            'Fuelman geolocation was not shared on chat open:',
+            error?.code || 'UNKNOWN'
+          );
+        });
+      });
 
       window.addEventListener('message', event => {
         const request = event.data;
@@ -455,20 +517,12 @@
           );
         };
 
-        if (!navigator.geolocation) {
-          sendResponse({
-            success: false,
-            errorCode: 'UNSUPPORTED'
-          });
-          return;
-        }
-
-        navigator.geolocation.getCurrentPosition(
-          position => {
+        requestCurrentLocation().then(
+          location => {
             sendResponse({
               success: true,
-              latitude: position.coords.latitude,
-              longitude: position.coords.longitude
+              latitude: location.latitude,
+              longitude: location.longitude
             });
           },
           error => {
@@ -476,51 +530,10 @@
               success: false,
               errorCode: error?.code || 'UNKNOWN'
             });
-          },
-          GEOLOCATION_OPTIONS
+          }
         );
       });
     })();
-
-    //── manual test: outbound API request from the host page ──
-    window.testFuelmanApiRequest = async () => {
-      try {
-        const response = await fetch(
-          'https://api.jsonplaceholder.dev/posts',
-          {
-            method: 'POST',
-            mode: 'cors',
-            credentials: 'omit',
-            headers: {
-              'Content-Type': 'application/json'
-            },
-            body: JSON.stringify({
-              source: 'fuelman-host-snippet',
-              timestamp: new Date().toISOString(),
-              test: true
-            })
-          }
-        );
-
-        const body = await response.json();
-        const result = {
-          status: response.status,
-          ok: response.ok,
-          body
-        };
-
-        console.log('Fuelman API test:', result);
-
-        if (!response.ok) {
-          throw new Error(`API test failed with status ${response.status}`);
-        }
-
-        return result;
-      } catch (err) {
-        console.error('Fuelman API test failed:', err);
-        throw err;
-      }
-    };
 
     //── listener: hidden pre-chat fields (UTM params from the page URL) ──
     window.addEventListener('onEmbeddedMessagingReady', () => {
@@ -587,12 +600,7 @@
       }
     }
   </script>
-
-  <script
-    type='text/javascript'
-    src='https://fleetcorna--uat2.sandbox.my.site.com/ESWFuelman1773662742319/assets/js/bootstrap.min.js'
-    onload='initEmbeddedMessaging()'>
-  </script>
+  <script type='text/javascript' src='https://fleetcorna--uat2.sandbox.my.site.com/ESWFuelman1773662742319/assets/js/bootstrap.min.js' onload='initEmbeddedMessaging()'></script>
                                                                                                                                                                                                                                
   </body>
   </html>
