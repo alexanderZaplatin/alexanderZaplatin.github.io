@@ -53,51 +53,219 @@
     </main> 
 
   <script type='text/javascript'>
-        window.addEventListener('onTestCltRequestBrowserLocation', () => {
-                if (!navigator.geolocation) {
-                        console.error('[TestCLTAlex] Browser geolocation is not supported.');
-                        return;
-                }
+    (() => {
+      const LOCATION_REQUEST_MESSAGE = 'fuelman:geolocation:request';
+      const LOCATION_RESPONSE_MESSAGE = 'fuelman:geolocation:response';
+      const LOCATION_BRIDGE_VERSION = 1;
 
-                navigator.geolocation.getCurrentPosition(
-                        (position) => {
-                                console.log('[TestCLTAlex] Browser location:', {
-                                        latitude: position.coords.latitude,
-                                        longitude: position.coords.longitude,
-                                        accuracy: position.coords.accuracy
-                                });
-                        },
-                        (error) => {
-                                console.error('[TestCLTAlex] Browser location error:', {
-                                        code: error.code,
-                                        message: error.message
-                                });
-                        }
-                );
+      const GEOLOCATION_OPTIONS = {
+        enableHighAccuracy: false,
+        timeout: 4500,
+        maximumAge: 300000
+      };
+
+      let cachedLocation;
+      let pendingLocationRequest;
+      let hiddenPrechatFields;
+      let chatLaunchStarted = false;
+
+      function isDesktop() {
+        return window.matchMedia('(hover: hover) and (pointer: fine)').matches;
+      }
+
+      function requestCurrentLocation() {
+        if (cachedLocation) {
+          return Promise.resolve(cachedLocation);
+        }
+
+        if (pendingLocationRequest) {
+          return pendingLocationRequest;
+        }
+
+        if (!navigator.geolocation) {
+          return Promise.reject({ code: 'UNSUPPORTED' });
+        }
+
+        const currentRequest = new Promise((resolve, reject) => {
+          navigator.geolocation.getCurrentPosition(
+            position => {
+              cachedLocation = {
+                latitude: position.coords.latitude,
+                longitude: position.coords.longitude
+              };
+              resolve(cachedLocation);
+            },
+            reject,
+            GEOLOCATION_OPTIONS
+          );
         });
 
-        function initEmbeddedMessaging() {
-                try {
-                        embeddedservice_bootstrap.settings.language = 'en_US';
+        pendingLocationRequest = currentRequest;
 
-                        embeddedservice_bootstrap.init(
-                                '00DRT00000AsqQT',
-                                'Test_CLT_Alex',
-                                'https://fleetcorna--uat.sandbox.my.site.com/ESWTestCLTAlex1786893321172',
-                                {
-                                        scrt2URL: 'https://fleetcorna--uat.sandbox.my.salesforce-scrt.com'
-                                }
-                        );
-                } catch (err) {
-                        console.error('Error loading Embedded Messaging: ', err);
-                }
+        currentRequest.then(
+          () => {
+            if (pendingLocationRequest === currentRequest) {
+              pendingLocationRequest = undefined;
+            }
+          },
+          () => {
+            if (pendingLocationRequest === currentRequest) {
+              pendingLocationRequest = undefined;
+            }
+          }
+        );
+
+        return currentRequest;
+      }
+
+      function buildHiddenPrechatFields() {
+        const hiddenFields = {
+          utm_source: '',
+          utm_medium: '',
+          utm_campaign: '',
+          utm_term: '',
+          utm_content: '',
+          user_latitude: '',
+          user_longitude: ''
+        };
+
+        const params = new URLSearchParams(window.location.search);
+
+        for (const [key, value] of params.entries()) {
+          const k = key.toLowerCase();
+
+          // case-insensitive param name match; first occurrence wins
+          if (k in hiddenFields && !hiddenFields[k]) {
+            hiddenFields[k] = value;
+          }
         }
+
+        return hiddenFields;
+      }
+
+      function setHiddenPrechatFields() {
+        if (chatLaunchStarted || !hiddenPrechatFields) {
+          return;
+        }
+
+        embeddedservice_bootstrap.prechatAPI.setHiddenPrechatFields(
+          hiddenPrechatFields
+        );
+      }
+
+      //── listener: hidden pre-chat fields and browser location ──
+      window.addEventListener('onEmbeddedMessagingReady', () => {
+        try {
+          hiddenPrechatFields = buildHiddenPrechatFields();
+          setHiddenPrechatFields();
+
+          requestCurrentLocation()
+            .then(location => {
+              if (chatLaunchStarted) {
+                return;
+              }
+
+              hiddenPrechatFields.user_latitude = String(location.latitude);
+              hiddenPrechatFields.user_longitude = String(location.longitude);
+              setHiddenPrechatFields();
+            })
+            .catch(error => {
+              console.info(
+                'Browser location was not added to pre-chat fields:',
+                error?.code || 'UNKNOWN'
+              );
+            });
+        } catch (err) {
+          console.error('Error setting hidden prechat fields: ', err);
+        }
+      });
+
+      //── fallback bridge for the Share current location CLT ──
+      window.addEventListener('message', event => {
+        const request = event.data;
+
+        if (
+          request?.type !== LOCATION_REQUEST_MESSAGE ||
+          request.version !== LOCATION_BRIDGE_VERSION ||
+          typeof request.requestId !== 'string' ||
+          !request.requestId ||
+          !event.source
+        ) {
+          return;
+        }
+
+        const sendResponse = response => {
+          event.source.postMessage(
+            {
+              type: LOCATION_RESPONSE_MESSAGE,
+              version: LOCATION_BRIDGE_VERSION,
+              requestId: request.requestId,
+              ...response
+            },
+            event.origin
+          );
+        };
+
+        requestCurrentLocation().then(
+          location => {
+            sendResponse({
+              success: true,
+              latitude: location.latitude,
+              longitude: location.longitude
+            });
+          },
+          error => {
+            sendResponse({
+              success: false,
+              errorCode: error?.code || 'UNKNOWN'
+            });
+          }
+        );
+      });
+
+      //── listener: auto-launch chat on desktop ──
+      window.addEventListener('onEmbeddedMessagingButtonCreated', () => {
+        if (!isDesktop()) {
+          return;
+        }
+
+        setTimeout(() => {
+          try {
+            chatLaunchStarted = true;
+
+            embeddedservice_bootstrap.utilAPI.launchChat()
+              .then(() => console.log('Chat launched'))
+              .catch(error => console.error('launchChat failed:', error));
+          } catch (err) {
+            console.error('Error launching chat: ', err);
+          }
+        }, 5000);
+      });
+    })();
+
+    function initEmbeddedMessaging() {
+      try {
+        embeddedservice_bootstrap.settings.language = 'en_US';
+
+        embeddedservice_bootstrap.init(
+          '00DRT000009Sxcf',
+          'Fuelman_Agent_AI',
+          'https://fleetcorna--qa.sandbox.my.site.com/ESWFuelmanAgentAI1786695659677',
+          {
+            scrt2URL:
+              'https://fleetcorna--qa.sandbox.my.salesforce-scrt.com'
+          }
+        );
+      } catch (err) {
+        console.error('Error loading Embedded Messaging: ', err);
+      }
+    }
   </script>
 
   <script
-        type='text/javascript'
-        src='https://fleetcorna--uat.sandbox.my.site.com/ESWTestCLTAlex1786893321172/assets/js/bootstrap.min.js'
-        onload='initEmbeddedMessaging()'
-  ></script>                                                                                                                                                                                                       
+    type='text/javascript'
+    src='https://fleetcorna--qa.sandbox.my.site.com/ESWFuelmanAgentAI1786695659677/assets/js/bootstrap.min.js'
+    onload='initEmbeddedMessaging()'>
+  </script>                                                                                                                                                                                                      
   </body>
   </html>
