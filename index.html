@@ -167,24 +167,20 @@
       try {
         embeddedservice_bootstrap.settings.language = 'en_US';
 
-        embeddedservice_bootstrap.init(
-          '00DRT000009Sxcf',
-          'Test_Alex',
-          'https://fleetcorna--qa.sandbox.my.site.com/ESWTestCLTAlex1786962653538',
-          {
-            scrt2URL: 'https://fleetcorna--qa.sandbox.my.salesforce-scrt.com'
-          }
-        );
+			embeddedservice_bootstrap.init(
+				'00DSu000008Dmjl',
+				'Test_CLT_Alex',
+				'https://fleetcorna--dev3.sandbox.my.site.com/ESWTestCLTAlex1787058561875',
+				{
+					scrt2URL: 'https://fleetcorna--dev3.sandbox.my.salesforce-scrt.com'
+				}
+			);
       } catch (err) {
         console.error('Error loading Embedded Messaging: ', err);
       }
     }
   </script>
 
-  <script
-    type='text/javascript'
-    src='https://fleetcorna--qa.sandbox.my.site.com/ESWTestCLTAlex1786962653538/assets/js/bootstrap.min.js'
-    onload='initEmbeddedMessaging()'>
-  </script>                                                                                                                                                                                                  
+<script type='text/javascript' src='https://fleetcorna--dev3.sandbox.my.site.com/ESWTestCLTAlex1787058561875/assets/js/bootstrap.min.js' onload='initEmbeddedMessaging()'></script>                                                                                                                                                                                               
   </body>
   </html>
