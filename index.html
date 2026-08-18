@@ -163,24 +163,23 @@
       }, 5000);
     });
 
-    function initEmbeddedMessaging() {
-      try {
-        embeddedservice_bootstrap.settings.language = 'en_US';
+	function initEmbeddedMessaging() {
+		try {
+			embeddedservice_bootstrap.settings.language = 'en_US'; // For example, enter 'en' or 'en-US'
 
 			embeddedservice_bootstrap.init(
 				'00DSu000008Dmjl',
-				'Test_CLT_Alex',
-				'https://fleetcorna--dev3.sandbox.my.site.com/ESWTestCLTAlex1787058561875',
+				'Fuelman',
+				'https://fleetcorna--dev3.sandbox.my.site.com/ESWFuelman1786796833810',
 				{
 					scrt2URL: 'https://fleetcorna--dev3.sandbox.my.salesforce-scrt.com'
 				}
 			);
-      } catch (err) {
-        console.error('Error loading Embedded Messaging: ', err);
-      }
-    }
-  </script>
-
-<script type='text/javascript' src='https://fleetcorna--dev3.sandbox.my.site.com/ESWTestCLTAlex1787058561875/assets/js/bootstrap.min.js' onload='initEmbeddedMessaging()'></script>                                                                                                                                                                                               
+		} catch (err) {
+			console.error('Error loading Embedded Messaging: ', err);
+		}
+	};
+</script>
+<script type='text/javascript' src='https://fleetcorna--dev3.sandbox.my.site.com/ESWFuelman1786796833810/assets/js/bootstrap.min.js' onload='initEmbeddedMessaging()'></script>                                                                                                                                                                                           
   </body>
   </html>
