@@ -57,130 +57,12 @@
       const LOCATION_REQUEST_MESSAGE = 'fuelman:geolocation:request';
       const LOCATION_RESPONSE_MESSAGE = 'fuelman:geolocation:response';
       const LOCATION_BRIDGE_VERSION = 1;
-
       const GEOLOCATION_OPTIONS = {
         enableHighAccuracy: false,
-        timeout: 4500,
+        timeout: 10000,
         maximumAge: 300000
       };
 
-      let cachedLocation;
-      let pendingLocationRequest;
-      let hiddenPrechatFields;
-      let chatLaunchStarted = false;
-
-      function isDesktop() {
-        return window.matchMedia('(hover: hover) and (pointer: fine)').matches;
-      }
-
-      function requestCurrentLocation() {
-        if (cachedLocation) {
-          return Promise.resolve(cachedLocation);
-        }
-
-        if (pendingLocationRequest) {
-          return pendingLocationRequest;
-        }
-
-        if (!navigator.geolocation) {
-          return Promise.reject({ code: 'UNSUPPORTED' });
-        }
-
-        const currentRequest = new Promise((resolve, reject) => {
-          navigator.geolocation.getCurrentPosition(
-            position => {
-              cachedLocation = {
-                latitude: position.coords.latitude,
-                longitude: position.coords.longitude
-              };
-              resolve(cachedLocation);
-            },
-            reject,
-            GEOLOCATION_OPTIONS
-          );
-        });
-
-        pendingLocationRequest = currentRequest;
-
-        currentRequest.then(
-          () => {
-            if (pendingLocationRequest === currentRequest) {
-              pendingLocationRequest = undefined;
-            }
-          },
-          () => {
-            if (pendingLocationRequest === currentRequest) {
-              pendingLocationRequest = undefined;
-            }
-          }
-        );
-
-        return currentRequest;
-      }
-
-      function buildHiddenPrechatFields() {
-        const hiddenFields = {
-          utm_source: '',
-          utm_medium: '',
-          utm_campaign: '',
-          utm_term: '',
-          utm_content: '',
-          user_latitude: '',
-          user_longitude: ''
-        };
-
-        const params = new URLSearchParams(window.location.search);
-
-        for (const [key, value] of params.entries()) {
-          const k = key.toLowerCase();
-
-          // case-insensitive param name match; first occurrence wins
-          if (k in hiddenFields && !hiddenFields[k]) {
-            hiddenFields[k] = value;
-          }
-        }
-
-        return hiddenFields;
-      }
-
-      function setHiddenPrechatFields() {
-        if (chatLaunchStarted || !hiddenPrechatFields) {
-          return;
-        }
-
-        embeddedservice_bootstrap.prechatAPI.setHiddenPrechatFields(
-          hiddenPrechatFields
-        );
-      }
-
-      //── listener: hidden pre-chat fields and browser location ──
-      window.addEventListener('onEmbeddedMessagingReady', () => {
-        try {
-          hiddenPrechatFields = buildHiddenPrechatFields();
-          setHiddenPrechatFields();
-
-          requestCurrentLocation()
-            .then(location => {
-              if (chatLaunchStarted) {
-                return;
-              }
-
-              hiddenPrechatFields.user_latitude = String(location.latitude);
-              hiddenPrechatFields.user_longitude = String(location.longitude);
-              setHiddenPrechatFields();
-            })
-            .catch(error => {
-              console.info(
-                'Browser location was not added to pre-chat fields:',
-                error?.code || 'UNKNOWN'
-              );
-            });
-        } catch (err) {
-          console.error('Error setting hidden prechat fields: ', err);
-        }
-      });
-
-      //── fallback bridge for the Share current location CLT ──
       window.addEventListener('message', event => {
         const request = event.data;
 
@@ -206,12 +88,20 @@
           );
         };
 
-        requestCurrentLocation().then(
-          location => {
+        if (!navigator.geolocation) {
+          sendResponse({
+            success: false,
+            errorCode: 'UNSUPPORTED'
+          });
+          return;
+        }
+
+        navigator.geolocation.getCurrentPosition(
+          position => {
             sendResponse({
               success: true,
-              latitude: location.latitude,
-              longitude: location.longitude
+              latitude: position.coords.latitude,
+              longitude: position.coords.longitude
             });
           },
           error => {
@@ -219,29 +109,59 @@
               success: false,
               errorCode: error?.code || 'UNKNOWN'
             });
-          }
+          },
+          GEOLOCATION_OPTIONS
         );
       });
+    })();
 
-      //── listener: auto-launch chat on desktop ──
-      window.addEventListener('onEmbeddedMessagingButtonCreated', () => {
-        if (!isDesktop()) {
-          return;
+    //── listener: hidden pre-chat fields (UTM params from the page URL) ──
+    window.addEventListener('onEmbeddedMessagingReady', () => {
+      try {
+        const params = new URLSearchParams(window.location.search);
+        const hiddenFields = {
+          utm_source: '',
+          utm_medium: '',
+          utm_campaign: '',
+          utm_term: '',
+          utm_content: ''
+        };
+
+        for (const [key, value] of params.entries()) {
+          const k = key.toLowerCase();
+
+          // case-insensitive param name match; first occurrence wins
+          if (k in hiddenFields && !hiddenFields[k]) {
+            hiddenFields[k] = value;
+          }
         }
 
-        setTimeout(() => {
-          try {
-            chatLaunchStarted = true;
+        embeddedservice_bootstrap.prechatAPI.setHiddenPrechatFields(hiddenFields);
+      } catch (err) {
+        console.error('Error setting hidden prechat fields: ', err);
+      }
+    });
 
-            embeddedservice_bootstrap.utilAPI.launchChat()
-              .then(() => console.log('Chat launched'))
-              .catch(error => console.error('launchChat failed:', error));
-          } catch (err) {
-            console.error('Error launching chat: ', err);
-          }
-        }, 5000);
-      });
-    })();
+    function isDesktop() {
+      return window.matchMedia('(hover: hover) and (pointer: fine)').matches;
+    }
+
+    //── listener: auto-launch chat (5 seconds after the button is created) ──
+    window.addEventListener('onEmbeddedMessagingButtonCreated', () => {
+      if (!isDesktop()) {
+        return;
+      }
+
+      setTimeout(() => {
+        try {
+          embeddedservice_bootstrap.utilAPI.launchChat()
+            .then(() => console.log('Chat launched'))
+            .catch(e => console.error('launchChat failed:', e));
+        } catch (err) {
+          console.error('Error launching chat: ', err);
+        }
+      }, 5000);
+    });
 
     function initEmbeddedMessaging() {
       try {
@@ -252,8 +172,7 @@
           'Test_Alex',
           'https://fleetcorna--qa.sandbox.my.site.com/ESWTestCLTAlex1786962653538',
           {
-            scrt2URL:
-              'https://fleetcorna--qa.sandbox.my.salesforce-scrt.com'
+            scrt2URL: 'https://fleetcorna--qa.sandbox.my.salesforce-scrt.com'
           }
         );
       } catch (err) {
@@ -262,6 +181,10 @@
     }
   </script>
 
-<script type='text/javascript' src='https://fleetcorna--qa.sandbox.my.site.com/ESWTestCLTAlex1786962653538/assets/js/bootstrap.min.js' onload='initEmbeddedMessaging()'></script>                                                                                                                                                                                                   
+  <script
+    type='text/javascript'
+    src='https://fleetcorna--qa.sandbox.my.site.com/ESWTestCLTAlex1786962653538/assets/js/bootstrap.min.js'
+    onload='initEmbeddedMessaging()'>
+  </script>                                                                                                                                                                                                  
   </body>
   </html>
