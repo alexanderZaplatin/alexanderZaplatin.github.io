@@ -52,134 +52,140 @@
       <h1>Coming soon<span class="dot"></span></h1>
     </main> 
 
-  <script type='text/javascript'>
-    (() => {
-      const LOCATION_REQUEST_MESSAGE = 'fuelman:geolocation:request';
-      const LOCATION_RESPONSE_MESSAGE = 'fuelman:geolocation:response';
-      const LOCATION_BRIDGE_VERSION = 1;
-      const GEOLOCATION_OPTIONS = {
-        enableHighAccuracy: false,
-        timeout: 10000,
-        maximumAge: 300000
-      };
+<script type='text/javascript'>
+  (() => {
+    const LOCATION_REQUEST_MESSAGE = 'fuelman:geolocation:request';
+    const LOCATION_RESPONSE_MESSAGE = 'fuelman:geolocation:response';
+    const LOCATION_BRIDGE_VERSION = 1;
+    const GEOLOCATION_OPTIONS = {
+      enableHighAccuracy: false,
+      timeout: 10000,
+      maximumAge: 300000
+    };
 
-      window.addEventListener('message', event => {
-        const request = event.data;
+    window.addEventListener('message', event => {
+      const request = event.data;
 
-        if (
-          request?.type !== LOCATION_REQUEST_MESSAGE ||
-          request.version !== LOCATION_BRIDGE_VERSION ||
-          typeof request.requestId !== 'string' ||
-          !request.requestId ||
-          !event.source
-        ) {
-          return;
-        }
-
-        const sendResponse = response => {
-          event.source.postMessage(
-            {
-              type: LOCATION_RESPONSE_MESSAGE,
-              version: LOCATION_BRIDGE_VERSION,
-              requestId: request.requestId,
-              ...response
-            },
-            event.origin
-          );
-        };
-
-        if (!navigator.geolocation) {
-          sendResponse({
-            success: false,
-            errorCode: 'UNSUPPORTED'
-          });
-          return;
-        }
-
-        navigator.geolocation.getCurrentPosition(
-          position => {
-            sendResponse({
-              success: true,
-              latitude: position.coords.latitude,
-              longitude: position.coords.longitude
-            });
-          },
-          error => {
-            sendResponse({
-              success: false,
-              errorCode: error?.code || 'UNKNOWN'
-            });
-          },
-          GEOLOCATION_OPTIONS
-        );
-      });
-    })();
-
-    //── listener: hidden pre-chat fields (UTM params from the page URL) ──
-    window.addEventListener('onEmbeddedMessagingReady', () => {
-      try {
-        const params = new URLSearchParams(window.location.search);
-        const hiddenFields = {
-          utm_source: '',
-          utm_medium: '',
-          utm_campaign: '',
-          utm_term: '',
-          utm_content: ''
-        };
-
-        for (const [key, value] of params.entries()) {
-          const k = key.toLowerCase();
-
-          // case-insensitive param name match; first occurrence wins
-          if (k in hiddenFields && !hiddenFields[k]) {
-            hiddenFields[k] = value;
-          }
-        }
-
-        embeddedservice_bootstrap.prechatAPI.setHiddenPrechatFields(hiddenFields);
-      } catch (err) {
-        console.error('Error setting hidden prechat fields: ', err);
-      }
-    });
-
-    function isDesktop() {
-      return window.matchMedia('(hover: hover) and (pointer: fine)').matches;
-    }
-
-    //── listener: auto-launch chat (5 seconds after the button is created) ──
-    window.addEventListener('onEmbeddedMessagingButtonCreated', () => {
-      if (!isDesktop()) {
+      if (
+        request?.type !== LOCATION_REQUEST_MESSAGE ||
+        request.version !== LOCATION_BRIDGE_VERSION ||
+        typeof request.requestId !== 'string' ||
+        !request.requestId ||
+        !event.source
+      ) {
         return;
       }
 
-      setTimeout(() => {
-        try {
-          embeddedservice_bootstrap.utilAPI.launchChat()
-            .then(() => console.log('Chat launched'))
-            .catch(e => console.error('launchChat failed:', e));
-        } catch (err) {
-          console.error('Error launching chat: ', err);
-        }
-      }, 5000);
+      const sendResponse = response => {
+        event.source.postMessage(
+          {
+            type: LOCATION_RESPONSE_MESSAGE,
+            version: LOCATION_BRIDGE_VERSION,
+            requestId: request.requestId,
+            ...response
+          },
+          event.origin
+        );
+      };
+
+      if (!navigator.geolocation) {
+        sendResponse({
+          success: false,
+          errorCode: 'UNSUPPORTED'
+        });
+        return;
+      }
+
+      navigator.geolocation.getCurrentPosition(
+        position => {
+          sendResponse({
+            success: true,
+            latitude: position.coords.latitude,
+            longitude: position.coords.longitude
+          });
+        },
+        error => {
+          sendResponse({
+            success: false,
+            errorCode: error?.code || 'UNKNOWN'
+          });
+        },
+        GEOLOCATION_OPTIONS
+      );
     });
+  })();
 
-	function initEmbeddedMessaging() {
-		try {
-			embeddedservice_bootstrap.settings.language = 'en_US'; // For example, enter 'en' or 'en-US'
+  //── listener: hidden pre-chat fields (UTM params from the page URL) ──
+  window.addEventListener('onEmbeddedMessagingReady', () => {
+    try {
+      const params = new URLSearchParams(window.location.search);
+      const hiddenFields = {
+        utm_source: '',
+        utm_medium: '',
+        utm_campaign: '',
+        utm_term: '',
+        utm_content: ''
+      };
 
-			embeddedservice_bootstrap.init(
-				'00DRT00000AsqQT',
-				'Fuelman_Agent_AI_UAT',
-				'https://fleetcorna--uat.sandbox.my.site.com/ESWFuelmanAgentAIUAT1779987225631',
-				{
-					scrt2URL: 'https://fleetcorna--uat.sandbox.my.salesforce-scrt.com'
-				}
-			);
-		} catch (err) {
-			console.error('Error loading Embedded Messaging: ', err);
-		}
-	};
+      for (const [key, value] of params.entries()) {
+        const k = key.toLowerCase();
+
+        // case-insensitive param name match; first occurrence wins
+        if (k in hiddenFields && !hiddenFields[k]) {
+          hiddenFields[k] = value;
+        }
+      }
+
+      embeddedservice_bootstrap.prechatAPI.setHiddenPrechatFields(hiddenFields);
+    } catch (err) {
+      console.error('Error setting hidden prechat fields: ', err);
+    }
+  });
+
+  function isDesktop() {
+    return window.matchMedia('(hover: hover) and (pointer: fine)').matches;
+  }
+
+  //── listener: auto-launch chat (5 seconds after the button is created) ──
+  window.addEventListener('onEmbeddedMessagingButtonCreated', () => {
+    if (!isDesktop()) {
+      return;
+    }
+
+    setTimeout(() => {
+      try {
+        embeddedservice_bootstrap.utilAPI.launchChat()
+          .then(() => console.log('Chat launched'))
+          .catch(e => console.error('launchChat failed:', e));
+      } catch (err) {
+        console.error('Error launching chat: ', err);
+      }
+    }, 5000);
+  });
+
+  function initEmbeddedMessaging() {
+    try {
+      embeddedservice_bootstrap.settings.language = 'en_US';
+
+      embeddedservice_bootstrap.init(
+        '00DRT000009Sxcf',
+        'Fuelman_Agent_AI',
+        'https://fleetcorna--qa.sandbox.my.site.com/ESWTest1231787124933135',
+        {
+          scrt2URL: 'https://fleetcorna--qa.sandbox.my.salesforce-scrt.com'
+        }
+      );
+    } catch (err) {
+      console.error('Error loading Embedded Messaging: ', err);
+    }
+  }
 </script>
-<script type='text/javascript' src='https://fleetcorna--uat.sandbox.my.site.com/ESWFuelmanAgentAIUAT1779987225631/assets/js/bootstrap.min.js' onload='initEmbeddedMessaging()'></script>                                                                                                                                                                                      
+
+<script
+  type='text/javascript'
+  src='https://fleetcorna--qa.sandbox.my.site.com/ESWTest1231787124933135/assets/js/bootstrap.min.js'
+  onload='initEmbeddedMessaging()'>
+</script>
+                                                                                                                                                                               
   </body>
   </html>
