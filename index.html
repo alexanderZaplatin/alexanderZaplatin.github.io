@@ -115,21 +115,6 @@
     });
   })();
 
-  let isWithinBusinessHours = false;
-
-  window.addEventListener('onEmbeddedMessagingWithinBusinessHours', () => {
-    isWithinBusinessHours = true;
-  });
-
-  window.addEventListener('onEmbeddedMessagingBusinessHoursStarted', () => {
-    isWithinBusinessHours = true;
-  });
-
-  window.addEventListener('onEmbeddedMessagingBusinessHoursEnded', () => {
-    isWithinBusinessHours = false;
-  });
-
-  //── listener: hidden pre-chat fields (UTM params from the page URL) ──
   window.addEventListener('onEmbeddedMessagingReady', () => {
     try {
       const params = new URLSearchParams(window.location.search);
@@ -144,7 +129,6 @@
       for (const [key, value] of params.entries()) {
         const k = key.toLowerCase();
 
-        // case-insensitive param name match; first occurrence wins
         if (k in hiddenFields && !hiddenFields[k]) {
           hiddenFields[k] = value;
         }
@@ -160,17 +144,14 @@
     return window.matchMedia('(hover: hover) and (pointer: fine)').matches;
   }
 
-  //── listener: auto-launch chat (5 seconds after the button is created) ──
-  window.addEventListener('onEmbeddedMessagingButtonCreated', () => {
+  window.addEventListener('onEmbeddedMessagingWithinBusinessHours', () => {
+    console.log('Business Hours status: within');
+
     if (!isDesktop()) {
       return;
     }
 
     setTimeout(() => {
-      if (!isWithinBusinessHours) {
-        return;
-      }
-
       try {
         embeddedservice_bootstrap.utilAPI.launchChat()
           .then(() => console.log('Chat launched'))
