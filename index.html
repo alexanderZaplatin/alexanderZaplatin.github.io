@@ -119,17 +119,14 @@
 
   window.addEventListener('onEmbeddedMessagingWithinBusinessHours', () => {
     isWithinBusinessHours = true;
-    console.log('Embedded Messaging is within Business Hours');
   });
 
   window.addEventListener('onEmbeddedMessagingBusinessHoursStarted', () => {
     isWithinBusinessHours = true;
-    console.log('Embedded Messaging Business Hours started');
   });
 
   window.addEventListener('onEmbeddedMessagingBusinessHoursEnded', () => {
     isWithinBusinessHours = false;
-    console.log('Embedded Messaging is outside Business Hours');
   });
 
   //── listener: hidden pre-chat fields (UTM params from the page URL) ──
@@ -171,7 +168,6 @@
 
     setTimeout(() => {
       if (!isWithinBusinessHours) {
-        console.log('Auto launch skipped: outside Business Hours');
         return;
       }
 
@@ -208,6 +204,7 @@
   src='https://fleetcorna--qa.sandbox.my.site.com/ESWTest1231787124933135/assets/js/bootstrap.min.js'
   onload='initEmbeddedMessaging()'>
 </script>
+
                                                                                                                                                                                
   </body>
   </html>
