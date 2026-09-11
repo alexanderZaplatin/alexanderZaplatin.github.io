@@ -144,14 +144,22 @@
     return window.matchMedia('(hover: hover) and (pointer: fine)').matches;
   }
 
-  window.addEventListener('onEmbeddedMessagingWithinBusinessHours', () => {
-    console.log('Business Hours status: within');
+  let isWithinBusinessHours = false;
+  let isButtonCreated = false;
+  let autoLaunchTimerId;
 
-    if (!isDesktop()) {
+  function scheduleAutoLaunchWhenReady() {
+    if (!isWithinBusinessHours || !isButtonCreated || autoLaunchTimerId || !isDesktop()) {
       return;
     }
 
-    setTimeout(() => {
+    autoLaunchTimerId = setTimeout(() => {
+      autoLaunchTimerId = undefined;
+
+      if (!isWithinBusinessHours || !isDesktop()) {
+        return;
+      }
+
       try {
         embeddedservice_bootstrap.utilAPI.launchChat()
           .then(() => console.log('Chat launched'))
@@ -160,6 +168,16 @@
         console.error('Error launching chat: ', err);
       }
     }, 5000);
+  }
+
+  window.addEventListener('onEmbeddedMessagingWithinBusinessHours', () => {
+    isWithinBusinessHours = true;
+    scheduleAutoLaunchWhenReady();
+  });
+
+  window.addEventListener('onEmbeddedMessagingButtonCreated', () => {
+    isButtonCreated = true;
+    scheduleAutoLaunchWhenReady();
   });
 
   function initEmbeddedMessaging() {
@@ -185,6 +203,7 @@
   src='https://fleetcorna--qa.sandbox.my.site.com/ESWTest1231787124933135/assets/js/bootstrap.min.js'
   onload='initEmbeddedMessaging()'>
 </script>
+
 
                                                                                                                                                                                
   </body>
