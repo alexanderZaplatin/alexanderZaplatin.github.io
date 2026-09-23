@@ -116,6 +116,28 @@
   })();
 
   window.addEventListener('onEmbeddedMessagingReady', () => {
+    let Visitor_Id;
+
+    try {
+      const storedId = window.localStorage.getItem('Visitor_Id');
+      const isValidId = storedId?.length === 36 &&
+        /^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(storedId);
+
+      if (isValidId) {
+        Visitor_Id = storedId;
+      } else {
+        if (storedId) {
+          console.warn('Invalid stored Visitor_Id; replacing it with a new UUID.');
+        }
+
+        const newId = window.crypto.randomUUID();
+        window.localStorage.setItem('Visitor_Id', newId);
+        Visitor_Id = newId;
+      }
+    } catch {
+      console.warn('Unable to persist Visitor_Id; continuing without visitor identification.');
+    }
+
     try {
       const params = new URLSearchParams(window.location.search);
       const hiddenFields = {
@@ -134,9 +156,13 @@
         }
       }
 
+      if (Visitor_Id) {
+        hiddenFields.Visitor_Id = Visitor_Id;
+      }
+
       embeddedservice_bootstrap.prechatAPI.setHiddenPrechatFields(hiddenFields);
-    } catch (err) {
-      console.error('Error setting hidden prechat fields: ', err);
+    } catch {
+      console.error('Error setting hidden prechat fields.');
     }
   });
 
@@ -203,6 +229,7 @@
   src='https://fleetcorna--qa.sandbox.my.site.com/ESWTest1231787124933135/assets/js/bootstrap.min.js'
   onload='initEmbeddedMessaging()'>
 </script>
+
 
 
                                                                                                                                                                                
