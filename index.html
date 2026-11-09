@@ -89,10 +89,7 @@
       };
 
       if (!navigator.geolocation) {
-        sendResponse({
-          success: false,
-          errorCode: 'UNSUPPORTED'
-        });
+        sendResponse({ success: false, errorCode: 'UNSUPPORTED' });
         return;
       }
 
@@ -116,26 +113,23 @@
   })();
 
   window.addEventListener('onEmbeddedMessagingReady', () => {
-    let Visitor_Id;
-
+    let visitor_id;
     try {
-      const storedId = window.localStorage.getItem('Visitor_Id');
-      const isValidId = storedId?.length === 36 &&
-        /^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(storedId);
-
+      const storedId = window.localStorage.getItem('visitor_id');
+      const isValidId = /^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}(?![\s\S])/i.test(storedId ?? '');
       if (isValidId) {
-        Visitor_Id = storedId;
+        visitor_id = storedId;
       } else {
         if (storedId) {
-          console.warn('Invalid stored Visitor_Id; replacing it with a new UUID.');
+          console.warn('Invalid stored visitor_id; replacing it with a new UUID.');
         }
 
         const newId = window.crypto.randomUUID();
-        window.localStorage.setItem('Visitor_Id', newId);
-        Visitor_Id = newId;
+        visitor_id = newId;
+        window.localStorage.setItem('visitor_id', newId);
       }
     } catch {
-      console.warn('Unable to persist Visitor_Id; continuing without visitor identification.');
+      console.warn('Unable to persist visitor_id; continuing without visitor identification.');
     }
 
     try {
@@ -156,13 +150,13 @@
         }
       }
 
-      if (Visitor_Id) {
-        hiddenFields.Visitor_Id = Visitor_Id;
+      if (visitor_id) {
+        hiddenFields.visitor_id = visitor_id;
       }
 
       embeddedservice_bootstrap.prechatAPI.setHiddenPrechatFields(hiddenFields);
-    } catch {
-      console.error('Error setting hidden prechat fields.');
+    } catch (err) {
+      console.error('Error setting hidden prechat fields: ', err);
     }
   });
 
@@ -170,27 +164,74 @@
     return window.matchMedia('(hover: hover) and (pointer: fine)').matches;
   }
 
+  const AGENT_AUTOLAUNCH_COOKIE = 'fuelman_agent_autolaunch_handled';
   let isWithinBusinessHours = false;
   let isButtonCreated = false;
   let autoLaunchTimerId;
 
-  function scheduleAutoLaunchWhenReady() {
-    if (!isWithinBusinessHours || !isButtonCreated || autoLaunchTimerId || !isDesktop()) {
+  function saveAgentAutolaunchHandled() {
+    document.cookie =
+      `${AGENT_AUTOLAUNCH_COOKIE}=1; Path=/; SameSite=Lax; Secure`;
+  }
+
+  function isAgentAutolaunchHandled() {
+    return document.cookie
+      .split('; ')
+      .some(cookie => cookie === `${AGENT_AUTOLAUNCH_COOKIE}=1`);
+  }
+
+  function clearAgentAutolaunchHandled() {
+    document.cookie =
+      `${AGENT_AUTOLAUNCH_COOKIE}=; Path=/; Max-Age=0; SameSite=Lax; Secure`;
+  }
+
+  function cancelPendingAutoLaunch() {
+    if (autoLaunchTimerId === undefined) {
       return;
     }
 
-    autoLaunchTimerId = setTimeout(() => {
+    window.clearTimeout(autoLaunchTimerId);
+    autoLaunchTimerId = undefined;
+  }
+
+  function handleManualChatAction() {
+    saveAgentAutolaunchHandled();
+    cancelPendingAutoLaunch();
+  }
+
+  function scheduleAutoLaunchWhenReady() {
+    if (
+      !isWithinBusinessHours ||
+      !isButtonCreated ||
+      !isDesktop() ||
+      isAgentAutolaunchHandled() ||
+      autoLaunchTimerId !== undefined
+    ) {
+      return;
+    }
+
+    autoLaunchTimerId = window.setTimeout(() => {
       autoLaunchTimerId = undefined;
 
-      if (!isWithinBusinessHours || !isDesktop()) {
+      if (
+        !isWithinBusinessHours ||
+        !isDesktop() ||
+        isAgentAutolaunchHandled()
+      ) {
         return;
       }
+
+      saveAgentAutolaunchHandled();
 
       try {
         embeddedservice_bootstrap.utilAPI.launchChat()
           .then(() => console.log('Chat launched'))
-          .catch(e => console.error('launchChat failed:', e));
+          .catch(error => {
+            clearAgentAutolaunchHandled();
+            console.error('launchChat failed:', error);
+          });
       } catch (err) {
+        clearAgentAutolaunchHandled();
         console.error('Error launching chat: ', err);
       }
     }, 5000);
@@ -205,6 +246,21 @@
     isButtonCreated = true;
     scheduleAutoLaunchWhenReady();
   });
+
+  window.addEventListener(
+    'onEmbeddedMessagingButtonClicked',
+    handleManualChatAction
+  );
+
+  window.addEventListener(
+    'onEmbeddedMessagingWindowMinimized',
+    handleManualChatAction
+  );
+
+  window.addEventListener(
+    'onEmbeddedMessagingWindowClosed',
+    handleManualChatAction
+  );
 
   function initEmbeddedMessaging() {
     try {
@@ -229,6 +285,7 @@
   src='https://fleetcorna--qa.sandbox.my.site.com/ESWTest1231787124933135/assets/js/bootstrap.min.js'
   onload='initEmbeddedMessaging()'>
 </script>
+
 
 
 
