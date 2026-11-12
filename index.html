@@ -171,18 +171,18 @@
 
   function saveAgentAutolaunchHandled() {
     document.cookie =
-      ${AGENT_AUTOLAUNCH_COOKIE}=1; Path=/; SameSite=Lax; Secure;
+      `${AGENT_AUTOLAUNCH_COOKIE}=1; Path=/; SameSite=Lax; Secure`;
   }
 
   function isAgentAutolaunchHandled() {
     return document.cookie
       .split('; ')
-      .some(cookie => cookie === ${AGENT_AUTOLAUNCH_COOKIE}=1);
+      .some(cookie => cookie === `${AGENT_AUTOLAUNCH_COOKIE}=1`);
   }
 
   function clearAgentAutolaunchHandled() {
     document.cookie =
-      ${AGENT_AUTOLAUNCH_COOKIE}=; Path=/; Max-Age=0; SameSite=Lax; Secure;
+      `${AGENT_AUTOLAUNCH_COOKIE}=; Path=/; Max-Age=0; SameSite=Lax; Secure`;
   }
 
   function cancelPendingAutoLaunch() {
@@ -285,10 +285,6 @@
   src='https://fleetcorna--dev3.sandbox.my.site.com/ESWFuelman1786796833810/assets/js/bootstrap.min.js'
   onload='initEmbeddedMessaging()'>
 </script>
-
-
-
-
-                                                                                                                                                                               
+                                                                                                                                                                              
   </body>
   </html>
