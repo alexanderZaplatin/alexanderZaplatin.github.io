@@ -171,18 +171,18 @@
 
   function saveAgentAutolaunchHandled() {
     document.cookie =
-      `${AGENT_AUTOLAUNCH_COOKIE}=1; Path=/; SameSite=Lax; Secure`;
+      ${AGENT_AUTOLAUNCH_COOKIE}=1; Path=/; SameSite=Lax; Secure;
   }
 
   function isAgentAutolaunchHandled() {
     return document.cookie
       .split('; ')
-      .some(cookie => cookie === `${AGENT_AUTOLAUNCH_COOKIE}=1`);
+      .some(cookie => cookie === ${AGENT_AUTOLAUNCH_COOKIE}=1);
   }
 
   function clearAgentAutolaunchHandled() {
     document.cookie =
-      `${AGENT_AUTOLAUNCH_COOKIE}=; Path=/; Max-Age=0; SameSite=Lax; Secure`;
+      ${AGENT_AUTOLAUNCH_COOKIE}=; Path=/; Max-Age=0; SameSite=Lax; Secure;
   }
 
   function cancelPendingAutoLaunch() {
@@ -267,11 +267,11 @@
       embeddedservice_bootstrap.settings.language = 'en_US';
 
       embeddedservice_bootstrap.init(
-        '00DRT000009Sxcf',
-        'Fuelman_Agent_AI',
-        'https://fleetcorna--qa.sandbox.my.site.com/ESWTest1231787124933135',
+        '00DSu000008Dmjl',
+        'Fuelman',
+        'https://fleetcorna--dev3.sandbox.my.site.com/ESWFuelman1786796833810',
         {
-          scrt2URL: 'https://fleetcorna--qa.sandbox.my.salesforce-scrt.com'
+          scrt2URL: 'https://fleetcorna--dev3.sandbox.my.salesforce-scrt.com'
         }
       );
     } catch (err) {
@@ -282,7 +282,7 @@
 
 <script
   type='text/javascript'
-  src='https://fleetcorna--qa.sandbox.my.site.com/ESWTest1231787124933135/assets/js/bootstrap.min.js'
+  src='https://fleetcorna--dev3.sandbox.my.site.com/ESWFuelman1786796833810/assets/js/bootstrap.min.js'
   onload='initEmbeddedMessaging()'>
 </script>
 
